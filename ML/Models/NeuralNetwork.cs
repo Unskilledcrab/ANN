@@ -39,20 +39,38 @@ public class NeuralNetwork
     {
         for (int i = 0; i < epochs; i++)
         {
-            foreach (var set in data)
-            {
-                Train(set);
-            }            
+            SplitAndTrain(data);
         }
+    }
+
+    private void SplitAndTrain(List<TrainingData> data)
+    {
+        var trainingSet = new List<TrainingData>();
+        var validationSet = new List<TrainingData>();
+
+        // Need to split data 
+
+        foreach (var set in trainingSet)
+        {
+            Train(set);
+        }
+
+        var totalError = new List<List<double>>();
+        foreach (var set in validationSet)
+        {
+            SetInputs(set.Inputs);
+            CalculateError(set.ExpectedOutputs);
+            totalError.Add(Errors);
+        }
+        var average = totalError.Select(x => x.Average()).Average();
+        Console.WriteLine($"Average Error: {average}");
     }
 
     public void Train(TrainingData data)
     {
         SetInputs(data.Inputs);
-        BustCache(); // Bust the cache because we are about to calculate the new output
         CalculateError(data.ExpectedOutputs);
         UpdateLayers();
-        BustCache(); // Bust the cache again incase we are about to run our first prediction
     }
 
     private void UpdateLayers()
@@ -68,21 +86,6 @@ public class NeuralNetwork
         {
             var error = Math.Pow(actualOutputs[i] - expectedOutputs[i], 2);
             Errors.Add(error);
-        }
-    }
-
-    /// <summary>
-    /// Use to bust the cache so the next time outputs
-    /// will be re-calculated
-    /// </summary>
-    public void BustCache()
-    {        
-        foreach (var layer in Layers)
-        {
-            foreach (var neuron in layer.Neurons)
-            {
-                neuron.IsDirty = true;
-            }
         }
     }
 

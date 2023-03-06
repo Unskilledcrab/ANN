@@ -6,7 +6,6 @@ public class Neuron
     public List<Synapse> OutputSynapses { get; set; } = new();
     public double Bias { get; set; }
     public double Value { get; set; }
-    public bool IsDirty { get; set; } = true;
 
     private double _cachedOutput;
 
@@ -31,10 +30,6 @@ public class Neuron
             return Value;
         }
 
-        if (IsDirty) 
-        {
-            _cachedOutput = ActivationFunction.CalculateOutput(InputFunction.CalculateInput(InputSynapses));
-        }
-        return _cachedOutput;
+        return ActivationFunction.CalculateOutput(InputFunction.CalculateInput(InputSynapses));
     }
 }
