@@ -7,6 +7,10 @@ public class NeuralNetworkBuilder
         {
             throw new Exception($"{nameof(LayerConfigurations)} must have at least two layers configured (input & output)");
         }
-        return new NeuralNetwork(LayerConfigurations);
+        var networkConfiguration = new NetworkConfiguration
+        {
+            LayerConfigurations = LayerConfigurations
+        };
+        return new NeuralNetwork(networkConfiguration);
     }
 }

@@ -1,4 +1,3 @@
-
 public static class LayerConfigurationExtensions
 {
     private static readonly IInputFunction defaultHiddenInputFunction = new WeightedSumFunction();

@@ -13,6 +13,11 @@ builder.LayerConfigurations
 
 var network = builder.Build();
 
-var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons);
+var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, seed: 15);
 
-network.Train(fakeData, 1000);
+network.Train(fakeData, 10);
+
+foreach (var stat in network.NetworkStats)
+{
+    Console.WriteLine($"Epoch: {stat.Epoch.ToString("0000")} \t Error: {stat.Error}");
+}

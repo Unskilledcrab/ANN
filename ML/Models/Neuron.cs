@@ -7,8 +7,6 @@ public class Neuron
     public double Bias { get; set; }
     public double Value { get; set; }
 
-    private double _cachedOutput;
-
     public Neuron(IInputFunction inputFunction, IActivationFunction activationFunction)
     {
         InputFunction = inputFunction;
@@ -22,6 +20,20 @@ public class Neuron
         neuron.OutputSynapses.Add(synapse);
     }
 
+    public double TrainNeuron(double expectedOutput, IErrorFunction errorFunction)
+    {
+        var actualOutput = CalculateOutput();
+        var cost = errorFunction.CalculateError(actualOutput, expectedOutput);
+
+        var change = (actualOutput - expectedOutput) * ActivationFunction.Derivate(actualOutput);
+        Bias += change * 0.02;
+        foreach (var synapse in InputSynapses)
+        {
+            
+        }
+        return cost;
+    }
+
     public double CalculateOutput()
     {
         // If we don't have input synapses we are input neurons
@@ -30,6 +42,6 @@ public class Neuron
             return Value;
         }
 
-        return ActivationFunction.CalculateOutput(InputFunction.CalculateInput(InputSynapses));
+        return ActivationFunction.Activate(InputFunction.CalculateInput(InputSynapses)) + Bias;
     }
 }

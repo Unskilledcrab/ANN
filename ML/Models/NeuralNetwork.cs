@@ -4,8 +4,15 @@ public class NeuralNetwork
     public NeuralLayer InputLayer { get; private set; }
     public NeuralLayer OutputLayer { get; private set; }
     public List<double> Errors { get; private set; } = new();
+    public IErrorFunction ErrorFunction { get; private set; }
+    public List<NetworkStats> NetworkStats { get; set; } = new();
+    public NeuralNetwork(NetworkConfiguration networkConfiguration)
+    {
+        ErrorFunction = networkConfiguration.ErrorFunction;
+        SetupLayers(networkConfiguration.LayerConfigurations);
+    }
 
-    public NeuralNetwork(List<LayerConfiguration> configurations)
+    private void SetupLayers(List<LayerConfiguration> configurations)
     {
         if (configurations.Count < 2)
         {
@@ -37,54 +44,66 @@ public class NeuralNetwork
 
     public void Train(List<TrainingData> data, int epochs)
     {
+        Console.WriteLine("Starting Training");
         for (int i = 0; i < epochs; i++)
         {
-            SplitAndTrain(data);
+            var averageError = SplitAndTrain(data);
+            var stats = new NetworkStats
+            {
+                Epoch = i + 1,
+                Error = averageError
+            };
+            NetworkStats.Add(stats);
         }
+        Console.WriteLine();
     }
 
-    private void SplitAndTrain(List<TrainingData> data)
+    private double SplitAndTrain(List<TrainingData> data)
     {
-        var trainingSet = new List<TrainingData>();
-        var validationSet = new List<TrainingData>();
+        var validationCount = (int)Math.Floor(data.Count * 0.2);
+        var trainingCount = data.Count - validationCount;
 
-        // Need to split data 
-
-        foreach (var set in trainingSet)
+        foreach (var set in data.Take(trainingCount))
         {
             Train(set);
         }
 
-        var totalError = new List<List<double>>();
-        foreach (var set in validationSet)
+        var totalAverageErrors = new List<double>();
+        foreach (var set in data.Skip(trainingCount).Take(validationCount))
         {
             SetInputs(set.Inputs);
             CalculateError(set.ExpectedOutputs);
-            totalError.Add(Errors);
+            totalAverageErrors.Add(Errors.Average());
         }
-        var average = totalError.Select(x => x.Average()).Average();
-        Console.WriteLine($"Average Error: {average}");
+        var networkAverageError = totalAverageErrors.Average();
+        return networkAverageError;
     }
 
     public void Train(TrainingData data)
     {
         SetInputs(data.Inputs);
         CalculateError(data.ExpectedOutputs);
-        UpdateLayers();
+        UpdateLayers(data.ExpectedOutputs);
     }
 
-    private void UpdateLayers()
+    private void UpdateLayers(List<double> expectedOutputs)
     {
-        throw new NotImplementedException();
+        Errors.Clear();
+        var actualOutputs = GetOutput();
+        for (int i = 0; i < expectedOutputs.Count; i++)
+        {            
+            var error = ErrorFunction.CalculateError(actualOutputs[i], expectedOutputs[i]);
+            Errors.Add(error);
+        }
     }
 
     public void CalculateError(List<double> expectedOutputs)
     {
+        Errors.Clear();
         var actualOutputs = GetOutput();
-        Errors = new List<double>();
         for (int i = 0; i < expectedOutputs.Count; i++)
-        {
-            var error = Math.Pow(actualOutputs[i] - expectedOutputs[i], 2);
+        {            
+            var error = ErrorFunction.CalculateError(actualOutputs[i], expectedOutputs[i]);
             Errors.Add(error);
         }
     }

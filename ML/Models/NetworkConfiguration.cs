@@ -1,8 +1,6 @@
 public class NetworkConfiguration
 {
-    public int InputNeurons { get; set; }
-    public int OutputNeurons { get; set; }
-    public IInputFunction InputFunction { get; set; }
-    public IActivationFunction ActivationFunction { get; set; }
-    public List<LayerConfiguration> HiddenLayerConfigurations { get; set; } = new();
+    public double LearningRate { get; set; }
+    public IErrorFunction ErrorFunction { get; set; } = new PowerDifferenceErrorFunction();
+    public List<LayerConfiguration> LayerConfigurations { get; set; } = new();
 }   

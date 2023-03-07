@@ -1,8 +1,8 @@
 public static class FakeData
 {
-    public static List<TrainingData> GetTrainingData(int inputs, int outputs, int amount = 10000)
+    public static List<TrainingData> GetTrainingData(int inputs, int outputs, int amount = 10000, int seed = 10)
     {
-        var random = new Random();
+        var random = new Random(seed);
         var fakeData = new List<TrainingData>();
         for (int i = 0; i < amount; i++)
         {
