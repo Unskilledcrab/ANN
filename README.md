@@ -1,4 +1,4 @@
-# DnD-GPT
+# Artifical Neural Network (ANN)
 
 ## Sources
 - [Simple Neural Network C#](https://rubikscode.net/2022/07/04/implementing-simple-neural-network-in-c/)
