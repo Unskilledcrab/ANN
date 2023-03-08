@@ -16,16 +16,27 @@ public static class FakeData
         var inputValues = new List<double>();
         var outputValues = new List<double>();
 
+        var rand = random.Next(500) - 250;
+        double lowValue = 0;
+        for (int i = -25; i < 25; i++)
+        {
+            var value = i * 10;
+            if (rand <= value)
+            {
+                lowValue = value;
+                break;
+            }
+        }
         for (int i = 0; i < inputs; i++)
         {
-            var lowValue = Math.Min(3, random.NextDouble());
+            // var lowValue = Math.Min(3, random.NextDouble());
             inputValues.Add(lowValue);
         }
 
         for (int i = 0; i < outputs; i++)
         {
-            var highValue = Math.Max(7, random.NextDouble());
-            outputValues.Add(highValue);
+            // var highValue = Math.Max(7, random.NextDouble());
+            outputValues.Add(lowValue + 20);
         }
 
         return new TrainingData

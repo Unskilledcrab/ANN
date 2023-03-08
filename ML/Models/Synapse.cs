@@ -8,15 +8,11 @@ public class Synapse
     {
         InputNeuron = inputNeuron;
         OutputNeuron = outputNeuron;
+        Weight = Random.Shared.NextDouble() - 0.5;
     }
 
     public double GetOutput()
     {
         return InputNeuron.CalculateOutput();
-    }
-
-    public void UpdateWeight(double learningRate, double delta)
-    {
-        Weight += learningRate * delta;
     }
 }

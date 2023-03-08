@@ -1,14 +1,19 @@
 public class NeuralNetwork
 {
+    private double outputMax;
+    private double outputMin;
+
     public List<NeuralLayer> Layers { get; set; } = new();
     public NeuralLayer InputLayer { get; private set; }
     public NeuralLayer OutputLayer { get; private set; }
     public List<double> Errors { get; private set; } = new();
     public IErrorFunction ErrorFunction { get; private set; }
+    public double LearningRate { get; }
     public List<NetworkStats> NetworkStats { get; set; } = new();
     public NeuralNetwork(NetworkConfiguration networkConfiguration)
     {
         ErrorFunction = networkConfiguration.ErrorFunction;
+        LearningRate = networkConfiguration.LearningRate;
         SetupLayers(networkConfiguration.LayerConfigurations);
     }
 
@@ -42,8 +47,43 @@ public class NeuralNetwork
         return GetOutput();
     }
 
+    public List<TrainingData> NormalizeTrainingData(List<TrainingData> data)
+    {
+        var inputMax = data.SelectMany(d => d.Inputs).Max();
+        var inputMin = data.SelectMany(d => d.Inputs).Min();
+        outputMax = data.SelectMany(d => d.ExpectedOutputs).Max();
+        outputMin = data.SelectMany(d => d.ExpectedOutputs).Min();
+
+        for (int i = 0; i < data.Count; i++)
+        {
+            var set = data[i];
+            for (int j = 0; j < set.Inputs.Count; j++)
+            {
+                var value = set.Inputs[j];
+                set.Inputs[j] = Normalize(value, inputMin, inputMax) - 0.5;
+            }
+            for (int j = 0; j < set.ExpectedOutputs.Count; j++)
+            {
+                var value = set.ExpectedOutputs[j];
+                set.ExpectedOutputs[j] = Normalize(value, outputMin, outputMax) - 0.5;
+            }
+        }
+        return data;
+    }
+
+    public double Normalize(double input, double min, double max)
+    {
+        return (input - min) / (max - min);
+    }
+
+    public double DeNormalize(double input)
+    {
+        return (input * (outputMax - outputMin)) + outputMin;
+    }
+
     public void Train(List<TrainingData> data, int epochs)
     {
+        //data = NormalizeTrainingData(data);
         Console.WriteLine("Starting Training");
         for (int i = 0; i < epochs; i++)
         {
@@ -53,6 +93,8 @@ public class NeuralNetwork
                 Epoch = i + 1,
                 Error = averageError
             };
+            
+            Console.WriteLine($"Epoch: {stats.Epoch.ToString("0000")} \t Error: {stats.Error}");
             NetworkStats.Add(stats);
         }
         Console.WriteLine();
@@ -82,19 +124,32 @@ public class NeuralNetwork
     public void Train(TrainingData data)
     {
         SetInputs(data.Inputs);
-        CalculateError(data.ExpectedOutputs);
         UpdateLayers(data.ExpectedOutputs);
     }
 
     private void UpdateLayers(List<double> expectedOutputs)
     {
-        Errors.Clear();
-        var actualOutputs = GetOutput();
-        for (int i = 0; i < expectedOutputs.Count; i++)
-        {            
-            var error = ErrorFunction.CalculateError(actualOutputs[i], expectedOutputs[i]);
-            Errors.Add(error);
+        UpdateOutputLayer(expectedOutputs);
+        UpdateHiddenLayers();
+    }
+
+    public void UpdateHiddenLayers()
+    {
+        if (Layers.Count <= 2)
+        {
+            return; // There are no hidden layers to train
         }
+
+        // Skip the first and last layer and train in reverse order
+        for (int i = Layers.Count - 1; i > 0; i--)
+        {
+            Layers[i].TrainHiddenNeurons(LearningRate);
+        }
+    }
+
+    private void UpdateOutputLayer(List<double> expectedOutputs)
+    {
+        OutputLayer.TrainOutputNeurons(expectedOutputs, ErrorFunction, LearningRate);
     }
 
     public void CalculateError(List<double> expectedOutputs)
@@ -116,6 +171,7 @@ public class NeuralNetwork
             InputLayer.Neurons[index].Value = input;
             index++;
         }
+        SetDirty(true);
     }
 
     public List<double> GetOutput()
@@ -126,6 +182,14 @@ public class NeuralNetwork
             outputs.Add(outputNeuron.CalculateOutput());
         }
         return outputs;
+    }
+
+    private void SetDirty(bool isDirty)
+    {
+        foreach (var layer in Layers)
+        {
+            layer.SetDirty(isDirty);
+        }
     }
 
     private void CreateInputLayer(LayerConfiguration configuration)

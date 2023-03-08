@@ -1,16 +1,21 @@
 public class Neuron
 {
+    private double _cachedValue;
+
     public IActivationFunction ActivationFunction { get; set; } = new RectifiedActivationFunction();
     public IInputFunction InputFunction { get; set; } = new WeightedSumFunction();
     public List<Synapse> InputSynapses { get; set; } = new();
     public List<Synapse> OutputSynapses { get; set; } = new();
     public double Bias { get; set; }
     public double Value { get; set; }
+    public bool IsDirty { get; set; } = true;
+    public double Delta { get; private set; }
 
     public Neuron(IInputFunction inputFunction, IActivationFunction activationFunction)
     {
         InputFunction = inputFunction;
         ActivationFunction = activationFunction;
+        Bias = Random.Shared.NextDouble() - 0.5;
     }
 
     public void ConnectInputNeuron(Neuron neuron)
@@ -20,18 +25,39 @@ public class Neuron
         neuron.OutputSynapses.Add(synapse);
     }
 
-    public double TrainNeuron(double expectedOutput, IErrorFunction errorFunction)
+    public void TrainHiddenNeuron(double learningRate)
     {
-        var actualOutput = CalculateOutput();
-        var cost = errorFunction.CalculateError(actualOutput, expectedOutput);
-
-        var change = (actualOutput - expectedOutput) * ActivationFunction.Derivate(actualOutput);
-        Bias += change * 0.02;
+        Delta = 0;
+        foreach (var synapse in OutputSynapses)
+        {
+            Delta += synapse.Weight * synapse.OutputNeuron.Delta;
+        }
+        Delta *= ActivationFunction.Derivate(CalculateOutput());
+        Bias -= Delta * learningRate;
         foreach (var synapse in InputSynapses)
         {
-            
+            synapse.Weight -= Delta * synapse.InputNeuron.CalculateOutput() * learningRate;
         }
-        return cost;
+    }
+
+    public double TrainOutputNeuron(double expectedOutput, IErrorFunction errorFunction, double learningRate)
+    {
+        if (OutputSynapses.Count > 0)
+        {
+            throw new Exception("Attempting to train neuron that is not on the output layer");
+        }
+
+        var actualOutput = CalculateOutput();
+        var error = errorFunction.CalculateError(actualOutput, expectedOutput);
+        Delta = (actualOutput - expectedOutput) * ActivationFunction.Derivate(actualOutput);
+        Bias -= Delta * learningRate;
+        foreach (var synapse in InputSynapses)
+        {
+            synapse.Weight -= Delta * synapse.InputNeuron.CalculateOutput() * learningRate;
+        }
+        // Console.WriteLine($"output: {actualOutput}\t expected: {expectedOutput}\t delta: {Delta}\t bias: {Bias}");
+        // Console.ReadKey();
+        return error;
     }
 
     public double CalculateOutput()
@@ -41,7 +67,11 @@ public class Neuron
         {
             return Value;
         }
-
-        return ActivationFunction.Activate(InputFunction.CalculateInput(InputSynapses)) + Bias;
+        if (IsDirty)
+        {
+            _cachedValue = ActivationFunction.Activate(InputFunction.CalculateInput(InputSynapses) + Bias);
+            IsDirty = false;
+        }
+        return _cachedValue;
     }
 }

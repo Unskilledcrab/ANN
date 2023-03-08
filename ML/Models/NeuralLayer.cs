@@ -20,4 +20,30 @@ public class NeuralLayer
             }
         }
     }
+
+    public void TrainHiddenNeurons(double learningRate)
+    {
+        foreach (var neuron in Neurons)
+        {
+            neuron.TrainHiddenNeuron(learningRate);
+        }
+    }
+
+    public double TrainOutputNeurons(List<double> expectedOutputs, IErrorFunction errorFunction, double learningRate)
+    {
+        double error = 0;
+        for (int i = 0; i < expectedOutputs.Count; i++)
+        {            
+            error += Neurons[i].TrainOutputNeuron(expectedOutputs[i], errorFunction, learningRate);
+        }
+        return error;
+    }
+
+    public void SetDirty(bool isDirty)
+    {
+        foreach (var neuron in Neurons)
+        {
+            neuron.IsDirty = isDirty;
+        }
+    }
 }
