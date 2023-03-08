@@ -13,10 +13,10 @@ var network = NeuralNetworkBuilder
     .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
     .WithOutputLayer(new LayerConfiguration { Neurons = outputNeurons, ActivationFunction = new LeakyReluActivationFunction() });
 
-var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 2000, seed: 15);
+var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 200, seed: 15);
 
 MeasureAccuracy(network, fakeData);
-network.Train(fakeData, 1000);
+network.Train(fakeData, 100);
 MeasureAccuracy(network, fakeData);
 
 while (true)
