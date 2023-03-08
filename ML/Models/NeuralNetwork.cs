@@ -47,7 +47,7 @@ public class NeuralNetwork
         return GetOutput();
     }
 
-    public List<TrainingData> NormalizeTrainingData(List<TrainingData> data)
+    public List<TrainingSet> NormalizeTrainingData(List<TrainingSet> data)
     {
         var inputMax = data.SelectMany(d => d.Inputs).Max();
         var inputMin = data.SelectMany(d => d.Inputs).Min();
@@ -81,13 +81,13 @@ public class NeuralNetwork
         return (input * (outputMax - outputMin)) + outputMin;
     }
 
-    public void Train(List<TrainingData> data, int epochs)
+    public void Train(List<TrainingSet> dataSets, int epochs)
     {
         //data = NormalizeTrainingData(data);
         Console.WriteLine("Starting Training");
         for (int i = 0; i < epochs; i++)
         {
-            var averageError = SplitAndTrain(data);
+            var averageError = SplitAndTrain(dataSets);
             var stats = new NetworkStats
             {
                 Epoch = i + 1,
@@ -100,18 +100,18 @@ public class NeuralNetwork
         Console.WriteLine();
     }
 
-    private double SplitAndTrain(List<TrainingData> data)
+    private double SplitAndTrain(List<TrainingSet> dataSets)
     {
-        var validationCount = (int)Math.Floor(data.Count * 0.2);
-        var trainingCount = data.Count - validationCount;
+        var validationCount = (int)Math.Floor(dataSets.Count * 0.2);
+        var trainingCount = dataSets.Count - validationCount;
 
-        foreach (var set in data.Take(trainingCount))
+        foreach (var set in dataSets.Take(trainingCount))
         {
             Train(set);
         }
 
         var totalAverageErrors = new List<double>();
-        foreach (var set in data.Skip(trainingCount).Take(validationCount))
+        foreach (var set in dataSets.Skip(trainingCount).Take(validationCount))
         {
             SetInputs(set.Inputs);
             CalculateError(set.ExpectedOutputs);
@@ -121,10 +121,10 @@ public class NeuralNetwork
         return networkAverageError;
     }
 
-    public void Train(TrainingData data)
+    public void Train(TrainingSet set)
     {
-        SetInputs(data.Inputs);
-        UpdateLayers(data.ExpectedOutputs);
+        SetInputs(set.Inputs);
+        UpdateLayers(set.ExpectedOutputs);
     }
 
     private void UpdateLayers(List<double> expectedOutputs)

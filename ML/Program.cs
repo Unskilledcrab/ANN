@@ -1,22 +1,22 @@
 ﻿// See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
 
-var inputNeurons = 1;
-var outputNeurons = 1;
+var inputNeurons = 3;
+var outputNeurons = 3;
 
-var builder = new NeuralNetworkBuilder();
-builder.LayerConfigurations
-    .WithInputs(inputNeurons)
-    .WithHiddenLayer(2, activationFunction: new LeakyReluActivationFunction())
-    .WithHiddenLayer(15, activationFunction: new LeakyReluActivationFunction())
-    .WithHiddenLayer(2, activationFunction: new LeakyReluActivationFunction())
-    .WithOutputLayer(outputNeurons, activationFunction: new LeakyReluActivationFunction());
+var network = NeuralNetworkBuilder
+    .CreateNetwork()
+    .WithSettings(0.02, new PowerDifferenceErrorFunction())
+    .WithInputLayer(inputNeurons)
+    .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
+    .WithHiddenLayer(new LayerConfiguration { Neurons = 15 })
+    .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
+    .WithOutputLayer(new LayerConfiguration { Neurons = outputNeurons, ActivationFunction = new LeakyReluActivationFunction() });
 
-var network = builder.Build();
-var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 1000, seed: 15);
+var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 2000, seed: 15);
 
 MeasureAccuracy(network, fakeData);
-network.Train(fakeData, 5000);
+network.Train(fakeData, 1000);
 MeasureAccuracy(network, fakeData);
 
 while (true)
@@ -40,14 +40,14 @@ while (true)
     }
 }
 
-static void MeasureAccuracy(NeuralNetwork network, List<TrainingData> fakeData)
+static void MeasureAccuracy(NeuralNetwork network, List<TrainingSet> fakeData)
 {
     var trialData = fakeData.First();
     var predictions = network.Predict(trialData.Inputs);
     NewMethod(trialData, predictions);
 
 }
-static void NewMethod(TrainingData trialData, List<double> predictions)
+static void NewMethod(TrainingSet trialData, List<double> predictions)
 {
     Console.WriteLine($"Inputs: {string.Join(',', trialData.Inputs)}");
     Console.WriteLine($"Expected: {string.Join(',', trialData.ExpectedOutputs)}");
