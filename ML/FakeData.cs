@@ -44,14 +44,14 @@ public static class FakeData
         }
         for (int i = 0; i < inputs; i++)
         {
-            // inputValues.Add(lowValue);
-            inputValues.Add(7);
+            inputValues.Add(lowValue);
+            //inputValues.Add(7);
         }
 
         for (int i = 0; i < outputs; i++)
         {
-            //outputValues.Add(lowValue + 20);
-            outputValues.Add(20);
+            outputValues.Add(lowValue + 20);
+            //outputValues.Add(20);
         }
 
         return new TrainingSet

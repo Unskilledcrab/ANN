@@ -1,19 +1,19 @@
 ﻿// See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
 
-var inputNeurons = 3;
-var outputNeurons = 3;
+var inputNeurons = 1;
+var outputNeurons = 1;
 
 var network = NeuralNetworkBuilder
     .CreateNetwork()
-    .WithSettings(0.02, new PowerDifferenceErrorFunction())
+    .WithSettings(0.5, new PowerDifferenceErrorFunction())
     .WithInputLayer(inputNeurons)
-    .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
-    .WithHiddenLayer(new LayerConfiguration { Neurons = 15 })
-    .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
+    //.WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
+    // .WithHiddenLayer(new LayerConfiguration { Neurons = 15 })
+    // .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
     .WithOutputLayer(new LayerConfiguration { Neurons = outputNeurons, ActivationFunction = new LeakyReluActivationFunction() });
 
-var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 200, seed: 15);
+var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 2000, seed: 15);
 
 MeasureAccuracy(network, fakeData);
 network.Train(fakeData, 100);

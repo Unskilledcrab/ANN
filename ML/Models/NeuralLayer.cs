@@ -46,4 +46,12 @@ public class NeuralLayer
             neuron.IsDirty = isDirty;
         }
     }
+
+    public void PrintLayer()
+    {
+        foreach (var neuron in Neurons)
+        {
+            neuron.PrintNeuron();
+        }
+    }
 }

@@ -15,7 +15,8 @@ public class Neuron
     {
         InputFunction = inputFunction;
         ActivationFunction = activationFunction;
-        Bias = Random.Shared.NextDouble() - 0.5;
+        //Bias = Random.Shared.NextDouble() - 0.5;
+        Bias = new Random(15).NextDouble() - 0.5;
     }
 
     public void ConnectInputNeuron(Neuron neuron)
@@ -27,6 +28,7 @@ public class Neuron
 
     public void TrainHiddenNeuron(double learningRate)
     {
+        //Console.Write(".");
         Delta = 0;
         foreach (var synapse in OutputSynapses)
         {
@@ -73,5 +75,14 @@ public class Neuron
             IsDirty = false;
         }
         return _cachedValue;
+    }
+
+    public void PrintNeuron()
+    {        
+        //Console.Write($"({InputSynapses.Select(s => s.Weight).Sum().ToString("0.0")})\t");
+        Console.Write($"({CalculateOutput().ToString("0.000")})\t");
+        //Console.Write($"({OutputSynapses.Select(s => s.Weight).Sum().ToString("0.0")})\t");
+        //Console.Write($"({Delta.ToString("0.0")})\t");
+        //Console.Write($"({Bias.ToString("0.0")})\t");
     }
 }

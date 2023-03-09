@@ -54,18 +54,23 @@ public class NeuralNetwork
         outputMax = data.SelectMany(d => d.ExpectedOutputs).Max();
         outputMin = data.SelectMany(d => d.ExpectedOutputs).Min();
 
+        if (inputMax == inputMin || outputMax == outputMin)
+        {
+            return data;
+        }
+
         for (int i = 0; i < data.Count; i++)
         {
             var set = data[i];
             for (int j = 0; j < set.Inputs.Count; j++)
             {
                 var value = set.Inputs[j];
-                set.Inputs[j] = Normalize(value, inputMin, inputMax) - 0.5;
+                set.Inputs[j] = Normalize(value, inputMin, inputMax);
             }
             for (int j = 0; j < set.ExpectedOutputs.Count; j++)
             {
                 var value = set.ExpectedOutputs[j];
-                set.ExpectedOutputs[j] = Normalize(value, outputMin, outputMax) - 0.5;
+                set.ExpectedOutputs[j] = Normalize(value, outputMin, outputMax);
             }
         }
         return data;
@@ -83,10 +88,11 @@ public class NeuralNetwork
 
     public void Train(List<TrainingSet> dataSets, int epochs)
     {
-        //data = NormalizeTrainingData(data);
+        //dataSets = NormalizeTrainingData(dataSets);
         Console.WriteLine("Starting Training");
         for (int i = 0; i < epochs; i++)
         {
+            PrintNetwork();
             var averageError = SplitAndTrain(dataSets);
             var stats = new NetworkStats
             {
@@ -141,10 +147,13 @@ public class NeuralNetwork
         }
 
         // Skip the first and last layer and train in reverse order
-        for (int i = Layers.Count - 1; i > 0; i--)
+        for (int i = Layers.Count - 2; i > 0; i--)
         {
+            //Console.Write($"Training Hidden Layer {i}");
             Layers[i].TrainHiddenNeurons(LearningRate);
+            //Console.WriteLine();
         }
+        //PrintNetwork();
     }
 
     private void UpdateOutputLayer(List<double> expectedOutputs)
@@ -212,5 +221,21 @@ public class NeuralNetwork
         outputLayer.ConnectPreviousLayer(Layers.Last());
         Layers.Add(outputLayer);
         OutputLayer = outputLayer;
+    }
+
+    public void PrintNetwork()
+    {
+        var maxNeuronCount = Layers.Select(x => x.Neurons.Count).Max();
+        foreach (var layer in Layers)
+        {
+            var tabAmount = (maxNeuronCount - layer.Neurons.Count) / 2;
+            for (int i = 0; i < tabAmount; i++)
+            {
+                Console.Write("\t");
+            }
+            layer.PrintLayer();
+            Console.WriteLine();
+        }
+        Console.ReadKey();
     }
 }
