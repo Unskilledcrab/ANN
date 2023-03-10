@@ -2,8 +2,8 @@ public class SigmoidActivationFunction : IActivationFunction
 {
     public double Activate(double input)
     {
-        var exp = Math.Exp(input);
-        return exp / (1 + exp);
+        var exp = Math.Exp(-input);
+        return 1 / (1 + exp);
     }
 
     public double Derivate(double input)

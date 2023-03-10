@@ -32,7 +32,7 @@ public class Neuron
         Delta = 0;
         foreach (var synapse in OutputSynapses)
         {
-            Delta += synapse.Weight * synapse.OutputNeuron.Delta;
+            Delta += synapse.PreviousWeight * synapse.OutputNeuron.Delta;
         }
         Delta *= ActivationFunction.Derivate(CalculateOutput());
         Bias -= Delta * learningRate;

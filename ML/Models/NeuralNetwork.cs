@@ -1,8 +1,5 @@
 public class NeuralNetwork
 {
-    private double outputMax;
-    private double outputMin;
-
     public List<NeuralLayer> Layers { get; set; } = new();
     public NeuralLayer InputLayer { get; private set; }
     public NeuralLayer OutputLayer { get; private set; }
@@ -43,47 +40,38 @@ public class NeuralNetwork
 
     public List<double> Predict(List<double> inputs)
     {
+        //SetInputs(inputs.Select(i => Normalize(i)));
         SetInputs(inputs);
         return GetOutput();
     }
 
     public List<TrainingSet> NormalizeTrainingData(List<TrainingSet> data)
     {
-        var inputMax = data.SelectMany(d => d.Inputs).Max();
-        var inputMin = data.SelectMany(d => d.Inputs).Min();
-        outputMax = data.SelectMany(d => d.ExpectedOutputs).Max();
-        outputMin = data.SelectMany(d => d.ExpectedOutputs).Min();
-
-        if (inputMax == inputMin || outputMax == outputMin)
-        {
-            return data;
-        }
-
         for (int i = 0; i < data.Count; i++)
         {
             var set = data[i];
             for (int j = 0; j < set.Inputs.Count; j++)
             {
                 var value = set.Inputs[j];
-                set.Inputs[j] = Normalize(value, inputMin, inputMax);
+                set.Inputs[j] = Normalize(value);
             }
             for (int j = 0; j < set.ExpectedOutputs.Count; j++)
             {
                 var value = set.ExpectedOutputs[j];
-                set.ExpectedOutputs[j] = Normalize(value, outputMin, outputMax);
+                set.ExpectedOutputs[j] = Normalize(value);
             }
         }
         return data;
     }
 
-    public double Normalize(double input, double min, double max)
+    public double Normalize(double input)
     {
-        return (input - min) / (max - min);
+        return (input - double.MinValue) / (double.MaxValue - double.MinValue);
     }
 
     public double DeNormalize(double input)
     {
-        return (input * (outputMax - outputMin)) + outputMin;
+        return (input * (double.MaxValue - double.MinValue)) + double.MinValue;
     }
 
     public void Train(List<TrainingSet> dataSets, int epochs)
@@ -111,13 +99,15 @@ public class NeuralNetwork
         var validationCount = (int)Math.Floor(dataSets.Count * 0.2);
         var trainingCount = dataSets.Count - validationCount;
 
-        foreach (var set in dataSets.Take(trainingCount))
+        //foreach (var set in dataSets.Take(trainingCount))
+        foreach (var set in dataSets)
         {
             Train(set);
         }
 
         var totalAverageErrors = new List<double>();
-        foreach (var set in dataSets.Skip(trainingCount).Take(validationCount))
+        //foreach (var set in dataSets.Skip(trainingCount).Take(validationCount))
+        foreach (var set in dataSets)
         {
             SetInputs(set.Inputs);
             CalculateError(set.ExpectedOutputs);
@@ -236,6 +226,6 @@ public class NeuralNetwork
             layer.PrintLayer();
             Console.WriteLine();
         }
-        Console.ReadKey();
+        //Console.ReadKey();
     }
 }
