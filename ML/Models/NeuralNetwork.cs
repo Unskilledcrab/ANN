@@ -1,16 +1,17 @@
 public class NeuralNetwork
 {
-    public List<NeuralLayer> Layers { get; set; } = new();
-    public NeuralLayer InputLayer { get; private set; }
-    public NeuralLayer OutputLayer { get; private set; }
+    public List<NeuralLayer> Layers { get; private set; } = new();
+    public NeuralLayer InputLayer => Layers[0];
+    public NeuralLayer OutputLayer => Layers[Layers.Count - 1];
     public List<double> Errors { get; private set; } = new();
-    public IErrorFunction ErrorFunction { get; private set; }
-    public double LearningRate { get; }
-    public List<NetworkStats> NetworkStats { get; set; } = new();
+    public NetworkSettings NetworkSettings { get; private set; } = new();
+    public List<NetworkStats> NetworkStats { get; private set; } = new();
+
+    private double LearningRate => NetworkSettings.LearningRate;
+    private IErrorFunction ErrorFunction => NetworkSettings.ErrorFunction;
     public NeuralNetwork(NetworkConfiguration networkConfiguration)
     {
-        ErrorFunction = networkConfiguration.ErrorFunction;
-        LearningRate = networkConfiguration.LearningRate;
+        NetworkSettings = networkConfiguration.NetworkSettings;
         SetupLayers(networkConfiguration.LayerConfigurations);
     }
 
@@ -21,20 +22,9 @@ public class NeuralNetwork
             throw new ArgumentException("You must provide at least two layer configurations (input & output)", nameof(configurations));
         }
 
-        for (int i = 0; i < configurations.Count; i++)
+        foreach (var configuration in configurations)
         {
-            if (i == 0)
-            {
-                CreateInputLayer(configurations[i]);
-            }
-            else if (i == configurations.Count - 1)
-            {
-                CreateOutputLayer(configurations[i]);
-            }
-            else
-            {
-                CreateHiddenLayer(configurations[i]);
-            }
+            AddLayer(configuration);
         }
     }
 
@@ -191,26 +181,14 @@ public class NeuralNetwork
         }
     }
 
-    private void CreateInputLayer(LayerConfiguration configuration)
+    private void AddLayer(LayerConfiguration configuration)
     {
-        var inputLayer = new NeuralLayer(configuration.Neurons, configuration.InputFunction, configuration.ActivationFunction);
-        Layers.Add(inputLayer);
-        InputLayer = inputLayer;
-    }
-
-    private void CreateHiddenLayer(LayerConfiguration configuration)
-    {
-        var hiddenLayer = new NeuralLayer(configuration.Neurons, configuration.InputFunction, configuration.ActivationFunction);
-        hiddenLayer.ConnectPreviousLayer(Layers.Last());
+        var hiddenLayer = new NeuralLayer(configuration.Neurons, configuration.InputFunction, configuration.ActivationFunction, NetworkSettings.Seed);
+        if (Layers.Count > 0)
+        {
+            hiddenLayer.ConnectPreviousLayer(Layers.Last());
+        }
         Layers.Add(hiddenLayer);
-    }
-
-    private void CreateOutputLayer(LayerConfiguration configuration)
-    {
-        var outputLayer = new NeuralLayer(configuration.Neurons, configuration.InputFunction, configuration.ActivationFunction);
-        outputLayer.ConnectPreviousLayer(Layers.Last());
-        Layers.Add(outputLayer);
-        OutputLayer = outputLayer;
     }
 
     public void PrintNetwork()

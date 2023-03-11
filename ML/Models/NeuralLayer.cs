@@ -2,11 +2,11 @@ public class NeuralLayer
 {
     public List<Neuron> Neurons { get; set; } = new();
 
-    public NeuralLayer(int neurons, IInputFunction inputFunction, IActivationFunction activationFunction)
+    public NeuralLayer(int neurons, IInputFunction inputFunction, IActivationFunction activationFunction, Random random)
     {
         for (int i = 0; i < neurons; i++)
         {
-            Neurons.Add(new Neuron(inputFunction, activationFunction));
+            Neurons.Add(new Neuron(inputFunction, activationFunction, random));
         }
     }
 

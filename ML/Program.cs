@@ -6,12 +6,13 @@ var outputNeurons = 1;
 
 var network = NeuralNetworkBuilder
     .CreateNetwork()
-    .WithSettings(0.5, new PowerDifferenceErrorFunction())
+    .WithSettings(s => { s.LearningRate = 0.5; s.Seed = new Random(15); })
     .WithInputLayer(inputNeurons)
-    .WithHiddenLayer(new LayerConfiguration { Neurons = 2 })
-    //.WithHiddenLayer(new LayerConfiguration { Neurons = 15 })
-    // .WithHiddenLayer(new LayerConfiguration { Neurons = 8 })
-    .WithOutputLayer(new LayerConfiguration { Neurons = outputNeurons, ActivationFunction = new SigmoidActivationFunction() });
+    .WithHiddenLayer(l => l.Neurons = 3)
+    .WithHiddenLayer(l => l.Neurons = 3)
+    //.WithHiddenLayer(l => l.Neurons = 15)    
+    .WithOutputLayer(l => {l.Neurons = outputNeurons; l.ActivationFunction = new SigmoidActivationFunction(); })
+    .Build();
 
 //var fakeData = FakeData.GetTrainingData(inputNeurons, outputNeurons, amount: 2000, seed: 15);
 var fakeData = FakeData.HardCodedSets();

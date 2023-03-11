@@ -13,12 +13,11 @@ public class Synapse
     }
     public double PreviousWeight { get; set; }
 
-    public Synapse(Neuron inputNeuron, Neuron outputNeuron)
+    public Synapse(Neuron inputNeuron, Neuron outputNeuron, Random random)
     {
         InputNeuron = inputNeuron;
         OutputNeuron = outputNeuron;
-        //Weight = Random.Shared.NextDouble() - 0.5;
-        Weight = new Random(15).NextDouble() - 0.5;
+        Weight = random.NextDouble() - 0.5;
     }
 
     public double GetOutput()

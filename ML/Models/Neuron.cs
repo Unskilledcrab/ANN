@@ -3,6 +3,9 @@ public class Neuron
     private double _cachedValue;
 
     public IActivationFunction ActivationFunction { get; set; } = new RectifiedActivationFunction();
+
+    private Random _random;
+
     public IInputFunction InputFunction { get; set; } = new WeightedSumFunction();
     public List<Synapse> InputSynapses { get; set; } = new();
     public List<Synapse> OutputSynapses { get; set; } = new();
@@ -11,17 +14,17 @@ public class Neuron
     public bool IsDirty { get; set; } = true;
     public double Delta { get; private set; }
 
-    public Neuron(IInputFunction inputFunction, IActivationFunction activationFunction)
+    public Neuron(IInputFunction inputFunction, IActivationFunction activationFunction, Random random)
     {
         InputFunction = inputFunction;
         ActivationFunction = activationFunction;
-        //Bias = Random.Shared.NextDouble() - 0.5;
-        Bias = new Random(15).NextDouble() - 0.5;
+        _random = random;
+        Bias = _random.NextDouble() - 0.5;
     }
 
     public void ConnectInputNeuron(Neuron neuron)
     {
-        var synapse = new Synapse(neuron, this);
+        var synapse = new Synapse(neuron, this, _random);
         InputSynapses.Add(synapse);
         neuron.OutputSynapses.Add(synapse);
     }
@@ -51,7 +54,7 @@ public class Neuron
 
         var actualOutput = CalculateOutput();
         var error = errorFunction.CalculateError(actualOutput, expectedOutput);
-        Delta = (actualOutput - expectedOutput) * ActivationFunction.Derivate(actualOutput);
+        Delta = errorFunction.Derivate(actualOutput, expectedOutput) * ActivationFunction.Derivate(actualOutput);
         Bias -= Delta * learningRate;
         foreach (var synapse in InputSynapses)
         {
@@ -80,9 +83,9 @@ public class Neuron
     public void PrintNeuron()
     {        
         //Console.Write($"({InputSynapses.Select(s => s.Weight).Sum().ToString("0.0")})\t");
-        Console.Write($"({CalculateOutput().ToString("0.000")})\t");
-        //Console.Write($"({OutputSynapses.Select(s => s.Weight).Sum().ToString("0.0")})\t");
-        //Console.Write($"({Delta.ToString("0.0")})\t");
-        //Console.Write($"({Bias.ToString("0.0")})\t");
+        //Console.Write($"({CalculateOutput().ToString("0.000")})\t");
+        Console.Write($"({OutputSynapses.Select(s => s.Weight).Sum().ToString("0.000000")})\t");
+        //Console.Write($"({Delta.ToString("0.00000")})\t");
+        //Console.Write($"({Bias.ToString("0.00000")})\t");
     }
 }

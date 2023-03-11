@@ -5,6 +5,9 @@ public static class FakeData
         return new List<TrainingSet>
         {
             HardCodedSet(Inputs(0,0,0), Outputs(0)),
+            HardCodedSet(Inputs(0,0,0), Outputs(0)),
+            HardCodedSet(Inputs(0,0,0), Outputs(0)),
+            HardCodedSet(Inputs(0,0,0), Outputs(0)),
             HardCodedSet(Inputs(0,0,1), Outputs(1)),
             HardCodedSet(Inputs(0,1,0), Outputs(1)),
             HardCodedSet(Inputs(0,1,1), Outputs(1)),
