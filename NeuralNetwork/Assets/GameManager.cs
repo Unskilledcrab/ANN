@@ -6,12 +6,16 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    private Material defaultMaterial;
+    [SerializeField]
+    private Material transparentMaterial;
+    [SerializeField]
+    private float offset = 2.5f;
+    [SerializeField]
+    private float trainingInterval = 0.005f;
+
     private NeuralNetwork network;
     private int maxNeuronsInLayer;
     private List<List<GameObject>> networkNeurons;
-    private float offset = 2.5f;
-    private float trainingInterval = 0.05f;
 
     public int InputNeurons { get; set; } = 4;
     public int OutputNeurons { get; set; } = 3;
@@ -20,10 +24,6 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        plane.SetActive(false);
-        defaultMaterial = plane.GetComponent<MeshRenderer>().sharedMaterial;
-
         network = NeuralNetworkBuilder
             .CreateNetwork()
             .WithSettings(0.5, new PowerDifferenceErrorFunction())
@@ -73,10 +73,11 @@ public class GameManager : MonoBehaviour
         var gameObject = new GameObject();
         gameObject.AddComponent<LineRenderer>();
         var lineRenderer = gameObject.GetComponent<LineRenderer>();
-        lineRenderer.material = new Material(defaultMaterial);
+        lineRenderer.material = new Material(transparentMaterial);
         lineRenderer.material.color = Color.gray;
         lineRenderer.positionCount = 2;
-        lineRenderer.SetWidth(0.1f, 0.1f);
+        lineRenderer.startWidth = 0.1f;
+        lineRenderer.endWidth = 0.1f;
         return lineRenderer;
     }
 

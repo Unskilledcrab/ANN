@@ -152,6 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dc0f28abaa6f194b9a330844a53a7fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  transparentMaterial: {fileID: 2100000, guid: ff93531aa38474b428981afb781f40fd, type: 2}
+  offset: 2.5
+  trainingInterval: 0.005
 --- !u!4 &371015537
 Transform:
   m_ObjectHideFlags: 0

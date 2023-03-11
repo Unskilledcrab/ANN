@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Windows;
 
 public class Synapse
 {
@@ -22,26 +23,29 @@ public class Synapse
     {
         if (LineRenderer == null) return;
 
-        var renderValue = (float)Math.Abs(value);
-        var normalizedRenderValue = Normalize(renderValue);
-        //Debug.Log($"Updating the color {normalizedRenderValue}");
-        //Debug.Log($"Updating the weight {value}");
+        var alpha = Normalize(Math.Abs(value), 0, 5);
+        var brightness = Brightness(alpha);
 
         Color color;
-        if (normalizedRenderValue > (255/2))
+        if (value > 0)
         {
-            color = new Color(0, normalizedRenderValue, 0, renderValue - 0.5f);
+            color = new Color(0, brightness, 0, alpha);
         }
         else
         {
-            color = new Color(normalizedRenderValue, 0, 0, renderValue);
+            color = new Color(brightness, 0, 0, alpha);
         }
         LineRenderer.material.color = color;
     }
 
-    public float Normalize(float input)
+    public float Normalize(double value, double min, double max)
     {
-        return input * 255;
+        return (float)((value - min) / (max - min));
+    }
+
+    public float Brightness(float alpha)
+    {
+        return alpha * (255 / 5);
     }
 
     public double PreviousWeight { get; set; }
