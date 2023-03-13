@@ -21,11 +21,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Material transparentMaterial;
     [SerializeField] private float offset = 2.5f;
     [SerializeField] private float trainingInterval = 0.005f;
-    [SerializeField] private TextMeshProUGUI topStatusBar;
     [SerializeField] private TextMeshProUGUI bottomStatusBar;
     [SerializeField] private VerticalLayoutGroup neuronPanel;
     [SerializeField] private VerticalLayoutGroup inputSynapsePanel;
     [SerializeField] private VerticalLayoutGroup outputSynapsePanel;
+    [SerializeField] private VerticalLayoutGroup layerPanel;
+    [SerializeField] private VerticalLayoutGroup trainingPanel;
+    [SerializeField] private TextMeshProUGUI trainingText;
+    [SerializeField] private HorizontalLayoutGroup networkPanel;
 
     private NeuralNetwork network;
     private int maxNeuronsInLayer;
@@ -56,6 +59,7 @@ public class GameManager : MonoBehaviour
             .WithOutputLayer(l => { l.Neurons = OutputNeurons; l.ActivationFunction = new SigmoidActivationFunction(); })
             .Build();
 
+        DeleteAllChildComponents(networkPanel.gameObject);
         maxNeuronsInLayer = network.Layers.Select(l => l.Neurons.Count).Max();
         networkNeurons = DrawNeuralNetwork(network);
         DrawConnections();
@@ -74,13 +78,16 @@ public class GameManager : MonoBehaviour
 
     private void GetPredictionStatus(List<TrainingSet> trainingSets)
     {
-        var firstTrainingSet = trainingSets.First();
-        var lastTrainingSet = trainingSets.Last();
-        var predictionFirst = network.Predict(firstTrainingSet.Inputs);
-        var predictionSecond = network.Predict(lastTrainingSet.Inputs);
-        var firstPrediction = $"Inputs: {string.Join(',', firstTrainingSet.Inputs)}\tExpected: {string.Join(',', firstTrainingSet.ExpectedOutputs)}\tPredicted: {string.Join(',', predictionFirst.Select(p => p.ToString("0.0000")))}";
-        var secondPrediction = $"Inputs: {string.Join(',', lastTrainingSet.Inputs)}\tExpected: {string.Join(',', lastTrainingSet.ExpectedOutputs)}\tPredicted: {string.Join(',', predictionSecond.Select(p => p.ToString("0.0000")))}";
-        topStatusBar.text = $"{firstPrediction}\n{secondPrediction}";
+        DeleteAllChildComponents(trainingPanel.gameObject);
+        foreach (var item in trainingSets)
+        {
+            var prediction = network.Predict(item.Inputs);
+            var predictionStat = $"Inputs: {string.Join(',', item.Inputs)}\tExpected: {string.Join(',', item.ExpectedOutputs)}\tPredicted: {string.Join(',', prediction.Select(p => p.ToString("0.0000")))}";
+
+            var newTrainingStat = Instantiate(trainingText, trainingPanel.transform);
+            newTrainingStat.enabled = true;
+            newTrainingStat.text = predictionStat;
+        }
     }
 
     private void DrawConnections()
@@ -102,12 +109,17 @@ public class GameManager : MonoBehaviour
                     var currenNeuronGO = neuronDictionary[currentNeuron];
                     var nextLayerNeuronGO = neuronDictionary[nextLayerNeuron];
 
-                    lineRenderer.SetPosition(0, currenNeuronGO.transform.position);
-                    lineRenderer.SetPosition(1, nextLayerNeuronGO.transform.position);
+                    var rect = currenNeuronGO.GetComponent<RectTransform>().anchoredPosition;
+                    var rect2 = nextLayerNeuronGO.GetComponent<RectTransform>().anchoredPosition;
+
+                    lineRenderer.SetPosition(0, rect);
+                    lineRenderer.SetPosition(1, rect2);
                 }
             }
         }
     }
+
+    
 
     private LineRenderer CreateLineRenderer()
     {
@@ -128,9 +140,10 @@ public class GameManager : MonoBehaviour
     private List<NeuronController> DrawLayer(int layerIndex, NeuralLayer neuralLayer)
     {
         var neurons = new List<NeuronController>();
+        var layerPanel = DrawLayerPanel();
         for (int neuronIndex = 0; neuronIndex < neuralLayer.Neurons.Count; neuronIndex++)
         {
-            var neuron = DrawNeuron(layerIndex, neuronIndex);
+            var neuron = DrawNeuron(layerPanel);
             neuronDictionary.Add(neuralLayer.Neurons[neuronIndex], neuron);
             neurons.Add(neuron);
         }
@@ -143,17 +156,19 @@ public class GameManager : MonoBehaviour
         return neurons;
     }
 
-    private NeuronController DrawNeuron(int layerIndex, int neuronIndex)
+    private VerticalLayoutGroup DrawLayerPanel()
     {
-        var unityNeuron = CreateNeuron();
-        unityNeuron.transform.position = new Vector3(layerIndex * offset, neuronIndex * offset, 0);
-        return unityNeuron;
+        var newLayerPanel = Instantiate(layerPanel);
+        newLayerPanel.transform.SetParent(networkPanel.transform, false);
+        return newLayerPanel;
     }
 
-    NeuronController CreateNeuron()
+    private NeuronController DrawNeuron(VerticalLayoutGroup layerPanel)
     {
         var newNeuron = Instantiate(neuronPrefab);
+        newNeuron.transform.SetParent(layerPanel.transform, false);
         newNeuron.MouseEnter += OnNeuronEnter;
+        newNeuron.GetComponent<UnityEngine.UI.Image>().enabled = true;
         return newNeuron;
     }
 
