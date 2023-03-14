@@ -122,13 +122,13 @@ public class GameManager : MonoBehaviour
                     var currentNeuron = network.Layers[currentLayerIndex].Neurons[currentNeuronIndex];
                     var nextLayerNeuron = network.Layers[nextLayerIndex].Neurons[nextLayerNeuronIndex];
 
-                    var currentNeuronGO = neuronDictionary[currentNeuron].GetComponent<RectTransform>();
-                    var nextLayerNeuronGO = neuronDictionary[nextLayerNeuron].GetComponent<RectTransform>();
+                    var currentNeuronGO = neuronDictionary[currentNeuron];
+                    var nextLayerNeuronGO = neuronDictionary[nextLayerNeuron];
 
-                    var currentPosition = Camera.main.WorldToScreenPoint(currentNeuronGO.localPosition);
-                    var nextPosition = Camera.main.WorldToScreenPoint(nextLayerNeuronGO.localPosition);
-                    lineRenderer.SetPosition(0, currentPosition);
-                    lineRenderer.SetPosition(1, nextPosition);
+                    //var currentPosition = Camera.main.WorldToScreenPoint(currentNeuronGO.localPosition);
+                    //var nextPosition = Camera.main.WorldToScreenPoint(nextLayerNeuronGO.localPosition);
+                    lineRenderer.SetPosition(0, currentNeuronGO.transform.position);
+                    lineRenderer.SetPosition(1, nextLayerNeuronGO.transform.position);
                 }
             }
         }
