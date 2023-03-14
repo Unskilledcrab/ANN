@@ -29,6 +29,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private VerticalLayoutGroup trainingPanel;
     [SerializeField] private TextMeshProUGUI trainingText;
     [SerializeField] private HorizontalLayoutGroup networkPanel;
+    [SerializeField] private Canvas canvas;
 
     private NeuralNetwork network;
     private int maxNeuronsInLayer;
@@ -36,6 +37,7 @@ public class GameManager : MonoBehaviour
     private int trainingCount;
     private Dictionary<Synapse, LineRenderer> synapseDictionary = new();
     private Dictionary<Neuron, NeuronController> neuronDictionary = new();
+    private bool isTraining = true;
 
     public int InputNeurons { get; set; } = 3;
     public int OutputNeurons { get; set; } = 1;
@@ -64,7 +66,21 @@ public class GameManager : MonoBehaviour
         networkNeurons = DrawNeuralNetwork(network);
         DrawConnections();
         trainingCount = 0;
-        InvokeRepeating("TrainNetwork", trainingInterval, trainingInterval);
+        InvokeRepeating(nameof(TrainNetwork), trainingInterval, trainingInterval);
+    }
+
+    public void ToggleTraining()
+    {
+        if (isTraining)
+        {
+            CancelInvoke(nameof(TrainNetwork));
+            isTraining = false;
+        }
+        else
+        {
+            InvokeRepeating(nameof(TrainNetwork), trainingInterval, trainingInterval);
+            isTraining = true;
+        }
     }
 
     private void TrainNetwork()
@@ -82,7 +98,7 @@ public class GameManager : MonoBehaviour
         foreach (var item in trainingSets)
         {
             var prediction = network.Predict(item.Inputs);
-            var predictionStat = $"Inputs: {string.Join(',', item.Inputs)}\tExpected: {string.Join(',', item.ExpectedOutputs)}\tPredicted: {string.Join(',', prediction.Select(p => p.ToString("0.0000")))}";
+            var predictionStat = $"Inputs: {string.Join(',', item.Inputs)} Expected: {string.Join(',', item.ExpectedOutputs)} Predicted: {string.Join(',', prediction.Select(p => p.ToString("0.0000")))}";
 
             var newTrainingStat = Instantiate(trainingText, trainingPanel.transform);
             newTrainingStat.enabled = true;
@@ -106,19 +122,22 @@ public class GameManager : MonoBehaviour
                     var currentNeuron = network.Layers[currentLayerIndex].Neurons[currentNeuronIndex];
                     var nextLayerNeuron = network.Layers[nextLayerIndex].Neurons[nextLayerNeuronIndex];
 
-                    var currenNeuronGO = neuronDictionary[currentNeuron];
-                    var nextLayerNeuronGO = neuronDictionary[nextLayerNeuron];
+                    var currentNeuronGO = neuronDictionary[currentNeuron].GetComponent<RectTransform>();
+                    var nextLayerNeuronGO = neuronDictionary[nextLayerNeuron].GetComponent<RectTransform>();
 
-                    var rect = currenNeuronGO.GetComponent<RectTransform>().anchoredPosition;
-                    var rect2 = nextLayerNeuronGO.GetComponent<RectTransform>().anchoredPosition;
-
-                    lineRenderer.SetPosition(0, rect);
-                    lineRenderer.SetPosition(1, rect2);
+                    var currentPosition = Camera.main.WorldToScreenPoint(currentNeuronGO.localPosition);
+                    var nextPosition = Camera.main.WorldToScreenPoint(nextLayerNeuronGO.localPosition);
+                    lineRenderer.SetPosition(0, currentPosition);
+                    lineRenderer.SetPosition(1, nextPosition);
                 }
             }
         }
     }
 
+    private Vector3 GetCanvasPosition(Vector3 position)
+    {
+        return Camera.main.ScreenToWorldPoint(position);
+    }
     
 
     private LineRenderer CreateLineRenderer()
