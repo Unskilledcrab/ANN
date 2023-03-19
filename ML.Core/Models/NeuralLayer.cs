@@ -1,16 +1,20 @@
 using System.Collections.Generic;
 using System;
 using ML.Core.Models;
+using ML.Core.Extensions;
 
 public class NeuralLayer
 {
+    private readonly Random _random;
+
     public List<Neuron> Neurons { get; set; } = new List<Neuron>();
 
-    public NeuralLayer(int neurons, IInputFunction inputFunction, IActivationFunction activationFunction, Random random)
+    public NeuralLayer(LayerConfiguration layerConfiguration, Random random)
     {
-        for (int i = 0; i < neurons; i++)
+        _random = random;
+        for (int i = 0; i < layerConfiguration.Neurons; i++)
         {
-            Neurons.Add(new Neuron(inputFunction, activationFunction, random));
+            Neurons.Add(new Neuron(layerConfiguration.InputFunction, layerConfiguration.ActivationFunction, random));
         }
     }
 
@@ -43,19 +47,30 @@ public class NeuralLayer
         return error;
     }
 
+    public void Mutate()
+    {
+        if (_random.CoinFlip(0.05))
+        {
+            foreach (var neuron in Neurons)
+            {
+                neuron.Mutate();
+            }
+        }
+    }
+
+    public void SeverInputLayerConnection()
+    {
+        foreach (var neuron in Neurons)
+        {
+            neuron.SeverInputSynapses();
+        }
+    }
+
     public void SetDirty(bool isDirty)
     {
         foreach (var neuron in Neurons)
         {
             neuron.IsDirty = isDirty;
-        }
-    }
-
-    public void PrintLayer()
-    {
-        foreach (var neuron in Neurons)
-        {
-            neuron.PrintNeuron();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
+using ML.Core.Extensions;
 
 namespace ML.Core.Models
 {
@@ -82,13 +83,36 @@ namespace ML.Core.Models
             return _cachedValue;
         }
 
-        public void PrintNeuron()
+        public void Mutate()
         {
-            //Console.Write($"({InputSynapses.Select(s => s.Weight).Sum().ToString("0.0")})\t");
-            //Console.Write($"({CalculateOutput().ToString("0.000")})\t");
-            //Console.Write($"({string.Join(",", OutputSynapses.Select(s => s.Weight.ToString("0.000000")))})\t");
-            //Console.Write($"({Delta.ToString("0.00000")})\t");
-            //Console.Write($"({Bias.ToString("0.00000")})\t");
+            if (_random.CoinFlip(0.1))
+            {
+                foreach (var inputSynapse in InputSynapses)
+                {
+                    inputSynapse.Mutate();
+                }
+                foreach (var outputSynapse in OutputSynapses)
+                {
+                    outputSynapse.Mutate();
+                }
+                Bias += _random.NextDouble() - 0.5;
+            }
+        }
+
+        public void SeverInputSynapses()
+        {
+            for (int i = InputSynapses.Count - 1; i >= 0; i--)
+            {
+                InputSynapses[i].Dispose();
+            }
+        }
+
+        public void RemoveSynapse(Synapse synapse)
+        {
+            if (InputSynapses.Contains(synapse))
+                InputSynapses.Remove(synapse);
+            if (OutputSynapses.Contains(synapse))
+                OutputSynapses.Remove(synapse);
         }
     }
 }

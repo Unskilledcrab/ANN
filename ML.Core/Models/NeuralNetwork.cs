@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using ML.Core.Extensions;
+using Newtonsoft.Json.Linq;
+using ML.Core.Models;
 
 public class NeuralNetwork
 {
@@ -9,15 +11,14 @@ public class NeuralNetwork
     public NeuralLayer InputLayer => Layers[0];
     public NeuralLayer OutputLayer => Layers[Layers.Count - 1];
     public List<double> Errors { get; private set; } = new List<double>();
+    public NetworkSettings NetworkSettings { get; private set; } = new NetworkSettings();
+    public List<NetworkStats> NetworkStats { get; private set; } = new List<NetworkStats>();
 
     private Random _random;
     private double inputMin;
     private double inputMax;
     private double outputMin;
     private double outputMax;
-
-    public NetworkSettings NetworkSettings { get; private set; } = new NetworkSettings();
-    public List<NetworkStats> NetworkStats { get; private set; } = new List<NetworkStats>();
 
     private double LearningRate => NetworkSettings.LearningRate;
     private IErrorFunction ErrorFunction => NetworkSettings.ErrorFunction;
@@ -27,6 +28,12 @@ public class NeuralNetwork
         _random = seed != null ? new Random(seed.Value) : new Random();
         NetworkSettings = networkConfiguration.NetworkSettings;
         SetupLayers(networkConfiguration.LayerConfigurations);
+    }
+
+    public NeuralNetwork(string jsonSerializedNetwork)
+    {
+        _random = new Random();
+        LoadSerializedNetwork(jsonSerializedNetwork);
     }
 
     private void SetupLayers(List<LayerConfiguration> configurations)
@@ -48,7 +55,7 @@ public class NeuralNetwork
         return GetOutput().Select(o => o.DeNormalize(outputMin, outputMax)).ToList();
     }
 
-    public List<TrainingSet> NormalizeTrainingData(List<TrainingSet> data)
+    private List<TrainingSet> NormalizeTrainingData(List<TrainingSet> data)
     {
         inputMin = double.MaxValue;
         inputMax = double.MinValue;
@@ -90,22 +97,11 @@ public class NeuralNetwork
         return data;
     }
 
-    public double Normalize(double input, double min, double max)
-    {
-        return (input - min) / (max - min);
-    }
-
-    public double DeNormalize(double input, double min, double max)
-    {
-        return (input * (double.MaxValue - double.MinValue)) + double.MinValue;
-    }
-
     public void Train(List<TrainingSet> dataSets, int epochs)
     {
         dataSets = NormalizeTrainingData(dataSets);
         for (int i = 0; i < epochs; i++)
         {
-            PrintNetwork();
             var averageError = SplitAndTrain(dataSets);
             var stats = new NetworkStats
             {
@@ -137,7 +133,7 @@ public class NeuralNetwork
         return networkAverageError;
     }
 
-    public void Train(TrainingSet set)
+    private void Train(TrainingSet set)
     {
         SetInputs(set.Inputs);
         UpdateLayers(set.ExpectedOutputs);
@@ -149,7 +145,7 @@ public class NeuralNetwork
         UpdateHiddenLayers();
     }
 
-    public void UpdateHiddenLayers()
+    private void UpdateHiddenLayers()
     {
         if (Layers.Count <= 2)
         {
@@ -161,7 +157,6 @@ public class NeuralNetwork
         {
             Layers[i].TrainHiddenNeurons(LearningRate);
         }
-        //PrintNetwork();
     }
 
     private void UpdateOutputLayer(List<double> expectedOutputs)
@@ -169,7 +164,7 @@ public class NeuralNetwork
         OutputLayer.TrainOutputNeurons(expectedOutputs, ErrorFunction, LearningRate);
     }
 
-    public void CalculateError(List<double> expectedOutputs)
+    private void CalculateError(List<double> expectedOutputs)
     {
         Errors.Clear();
         var actualOutputs = GetOutput();
@@ -180,7 +175,7 @@ public class NeuralNetwork
         }
     }
 
-    public void SetInputs(IEnumerable<double> inputs)
+    private void SetInputs(IEnumerable<double> inputs)
     {
         var index = 0;
         foreach (var input in inputs)
@@ -191,7 +186,7 @@ public class NeuralNetwork
         SetDirty(true);
     }
 
-    public List<double> GetOutput()
+    private List<double> GetOutput()
     {
         var outputs = new List<double>();
         foreach (var outputNeuron in OutputLayer.Neurons)
@@ -209,29 +204,136 @@ public class NeuralNetwork
         }
     }
 
-    private void AddLayer(LayerConfiguration configuration)
+    private void AddLayer(LayerConfiguration configuration, int? index = null)
     {
-        var hiddenLayer = new NeuralLayer(configuration.Neurons, configuration.InputFunction, configuration.ActivationFunction, _random);
+        var hiddenLayer = new NeuralLayer(configuration, _random);
+
         if (Layers.Count > 0)
         {
-            hiddenLayer.ConnectPreviousLayer(Layers.Last());
+            var previousLayer = Layers.Last();
+            if (index != null)
+            {
+                previousLayer = Layers[index.Value - 1];
+                Layers[index.Value].SeverInputLayerConnection();
+            }
+            hiddenLayer.ConnectPreviousLayer(previousLayer);
         }
-        Layers.Add(hiddenLayer);
+
+        if (index == null)
+        {
+            Layers.Add(hiddenLayer);
+        }
+        else
+        {
+            Layers.Insert(index.Value, hiddenLayer);
+            if (index.Value != Layers.Count - 1)
+            {
+                Layers[index.Value + 1].ConnectPreviousLayer(hiddenLayer);
+            }
+        }
     }
 
-    public void PrintNetwork()
+    public void Mutate()
     {
-        var maxNeuronCount = Layers.Select(x => x.Neurons.Count).Max();
+        MutateNetworkStructure();
+        MutateLayers();
+    }
+
+    private void MutateNetworkStructure()
+    {
+        if (_random.CoinFlip(0.02))
+        {
+            var inputNeuronCount = InputLayer.Neurons.Count;
+            var neuronCount = _random.Next(1, inputNeuronCount + 1);
+            var newLayerConfig = new LayerConfiguration { Neurons = neuronCount };
+
+            // Insert somewhere between the first and last layer
+            var insertIndex = _random.Next(1, Layers.Count - 1);
+            AddLayer(newLayerConfig, insertIndex);
+        }
+    }
+
+    private void MutateLayers()
+    {
         foreach (var layer in Layers)
         {
-            var tabAmount = (maxNeuronCount - layer.Neurons.Count) / 2;
-            for (int i = 0; i < tabAmount; i++)
-            {
-                //Console.Write("\t");
-            }
-            layer.PrintLayer();
-            //Console.WriteLine();
+            layer.Mutate();
         }
-        //Console.ReadKey();
+    }
+
+    public void LoadSerializedNetwork(string json)
+    {
+        Layers.Clear();
+        var obj = JObject.Parse(json);
+        var layerObjs = (JArray?)obj[nameof(Layers)];
+
+        if (layerObjs is null)
+            return;
+
+        int layerIndex = 0;
+        foreach (var layerObj in layerObjs)
+        {
+            var neuronObjs = (JArray?)layerObj[nameof(NeuralLayer.Neurons)];
+            if (neuronObjs is null)
+                return;
+
+            var neuronCount = neuronObjs.Count();
+            AddLayer(new LayerConfiguration { Neurons = neuronCount });
+
+            int neuronIndex = 0;
+            var layer = Layers[layerIndex];
+            foreach (var neuronObj in neuronObjs)
+            {
+                var neuron = layer.Neurons[neuronIndex];
+                var bias = (double?)neuronObj[nameof(Neuron.Bias)];
+                var inputSynapses = (JArray?)neuronObj[nameof(Neuron.InputSynapses)];
+
+                neuron.Bias = bias.GetValueOrDefault();
+                if (inputSynapses is null)
+                    return;
+
+                int synapseIndex = 0;
+                foreach (var synapseObj in inputSynapses)
+                {
+                    var synapse = neuron.InputSynapses[synapseIndex];
+                    var weight = (double?)synapseObj[nameof(Synapse.Weight)];
+                    synapse.Weight = weight.GetValueOrDefault();
+                    synapseIndex++;
+                }
+                neuronIndex++;
+            }
+            layerIndex++;
+        }
+    }
+
+    public string SerializeNetwork()
+    {
+        var networkObj = new JObject();
+        var layerObjs = new JArray();
+        foreach (var layer in Layers)
+        {
+            var layerObj = new JObject();
+            var neuronObjs = new JArray();
+            foreach (var neuron in layer.Neurons)
+            {
+                var neuronObj = new JObject();
+                var inputSynapseObjs = new JArray();
+                foreach (var inputSynapse in neuron.InputSynapses)
+                {
+                    var synapseObj = new JObject();
+                    synapseObj[nameof(Synapse.Weight)] = inputSynapse.Weight;
+                    inputSynapseObjs.Add(synapseObj);
+                }
+                neuronObj[nameof(Neuron.InputSynapses)] = inputSynapseObjs;
+                neuronObj[nameof(Neuron.Bias)] = neuron.Bias;
+                neuronObjs.Add(neuronObj);
+            }
+            layerObj[nameof(NeuralLayer.Neurons)] = neuronObjs;
+            layerObjs.Add(layerObj);
+        }
+        networkObj[nameof(Layers)] = layerObjs;
+
+        var json = networkObj.ToString();
+        return json;
     }
 }

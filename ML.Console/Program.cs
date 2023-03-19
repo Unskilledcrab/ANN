@@ -5,7 +5,7 @@ var outputNeurons = 1;
 
 var network = NeuralNetworkBuilder
     .CreateNetwork()
-    .WithSettings(s => { s.LearningRate = 0.5; s.Seed = 15; })
+    .WithSettings(s => { s.LearningRate = 0.5; s.Seed = 1; })
     .WithInputLayer(inputNeurons)
     .WithHiddenLayer(l => l.Neurons = 3)
     .WithHiddenLayer(l => l.Neurons = 3)
@@ -17,7 +17,15 @@ var network = NeuralNetworkBuilder
 var fakeData = FakeData.HardCodedSets_3_1();
 
 MeasureAccuracy(network, fakeData);
-network.Train(fakeData, 1000);
+for (int i = 0; i < 400; i++)
+{
+    //var loadedJson = File.ReadAllText($"C:\\Users\\jb090\\Desktop\\Testing\\test_again{i}.json");
+    //network.LoadSerializedNetwork(loadedJson);
+    network.Mutate();
+    var json = network.SerializeNetwork();
+    File.WriteAllText($"C:\\Users\\jb090\\Desktop\\Testing\\test{i}.json", json);
+}
+//network.Train(fakeData, 1000);
 MeasureAccuracy(network, fakeData);
 
 var inputs = new List<double>();
@@ -55,10 +63,23 @@ static void MeasureAccuracy(NeuralNetwork network, List<TrainingSet> fakeData)
 {
     var trialData = fakeData.First();
     var predictions = network.Predict(trialData.Inputs);
-    NewMethod(trialData, predictions);
-
+    OutputNetworkStructure(network);
+    OutputResults(trialData, predictions);
 }
-static void NewMethod(TrainingSet trialData, List<double> predictions)
+
+static void OutputNetworkStructure(NeuralNetwork network)
+{
+    Console.WriteLine($"Layer Count: {network.Layers.Count}");
+    Console.WriteLine($"{string.Join(Environment.NewLine, 
+            network.Layers.Select(l => 
+                $"[{string.Join(',', l.Neurons.Select(n => 
+                    $"(IS: {n.InputSynapses.Count}, OS: {n.OutputSynapses.Count})"))}]"
+            )
+        )}"
+    );
+}
+
+static void OutputResults(TrainingSet trialData, List<double> predictions)
 {
     Console.WriteLine($"Inputs: {string.Join(',', trialData.Inputs)}");
     Console.WriteLine($"Expected: {string.Join(',', trialData.ExpectedOutputs)}");
